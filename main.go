@@ -4,25 +4,25 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"strings"
 	"unicode"
 )
 
-const spacesPerIndentLevel = 2
+const spacesPerIndentLevel = 4
 
 func main() {
 	if len(os.Args) < 2 {
 		log.Fatalf("missing filename.gml")
 	}
-	f, err := os.Open(os.Args[1])
+	f, err := ioutil.ReadFile(os.Args[1])
 	if err != nil {
 		log.Fatalf("failed to open %v", os.Args[1])
 	}
-	defer f.Close()
-
-	fmt.Fprintf(os.Stdout, fixit(f))
+	pants(string(f))
+	//fmt.Fprintf(os.Stdout, fixit(f))
 }
 
 func fixit(r io.Reader) string {
@@ -45,7 +45,6 @@ func fixit(r io.Reader) string {
 				continue
 			}
 			doneBeginning = true
-			// todo(caf): detect and ignore when the `{` or `}` are in a comment, or in a string
 			if !pastSingleLineComment && char == '/' && len(s.Text())-1 > i && s.Text()[i+1] == '/' {
 				continue
 			}
@@ -56,6 +55,7 @@ func fixit(r io.Reader) string {
 			if char == '*' && len(s.Text())-1 > i && s.Text()[i+1] == '/' {
 				commentDepth--
 			}
+			// todo(caf): detect and ignore when the `{` or `}` are in a comment, or in a string
 			if commentDepth == 0 && quoteDepth == 0 {
 				if char == '{' {
 					currentIndent++
@@ -75,6 +75,8 @@ func fixit(r io.Reader) string {
 		} else {
 			out += fmt.Sprintf("%v%v", indent(lastIndent), strings.TrimSpace(s.Text()))
 		}
+		// todo(caf): add missing semicolons
+		// todo(caf): indent over once if the user opened a paren on the previous line end
 		if s.Err() != nil {
 			break
 		}
