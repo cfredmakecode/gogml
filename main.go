@@ -25,6 +25,21 @@ func main() {
 	//fmt.Fprintf(os.Stdout, fixit(f))
 }
 
+func pants(s string) {
+	l := newLexer(s)
+	err := l.lex()
+	if err != nil {
+		log.Fatalf("problem parsing tokens from text stream: %v", err.Error())
+	}
+	for _, t := range l.tokens {
+		if t.tokType != TOKEN_WHITESPACE {
+			fmt.Printf("%#v\n", t)
+		}
+	}
+	p := &parser{l: l}
+	_ = p
+}
+
 func fixit(r io.Reader) string {
 	currentIndent := 0
 	lastIndent := 0

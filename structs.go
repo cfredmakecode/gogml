@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"log"
 	"strings"
 )
 
@@ -18,8 +17,18 @@ func (t *token) String() string {
 		t.tokType, t.name, t.value)
 }
 
+type lexerState int
+
+const (
+	LEXER_NONE lexerState = iota
+	LEXER_IDENTIFIER
+	LEXER_NUMBER
+)
+
 type lexer struct {
 	stream *strings.Reader
+	tokens []token
+	state  lexerState
 }
 
 func newLexer(s string) *lexer {
@@ -30,44 +39,69 @@ func newLexer(s string) *lexer {
 
 func (l *lexer) nextToken() (token, error) {
 	var tok token
-	var doneOnce bool
-	for {
-		r, _, err := l.stream.ReadRune()
-		if err != nil {
-			return tok, err
-		}
-
-		if doneOnce && tok.tokType != getTokenType(r) {
-			l.stream.UnreadRune()
-			break
-		}
-		tok.tokType = getTokenType(r)
-		tok.value += string(r)
-		tok.name = tok.tokType.String()
-		doneOnce = true
-	}
-	return tok, nil
+	r, _, err := l.stream.ReadRune()
+	tok.tokType = getTokenType(r)
+	tok.value = string(r)
+	tok.name = tok.tokType.String()
+	return tok, err
 }
 
-func pants(s string) {
-	tokens := make([]token, 2048)
-	l := newLexer(s)
+func (l *lexer) lex() error {
 	for {
 		tok, err := l.nextToken()
-		tokens = append(tokens, tok)
+		l.tokens = append(l.tokens, tok)
 		if err != nil {
 			if err != io.EOF {
-				log.Fatalf("failed to get token")
+				return fmt.Errorf("failed to get token")
 			}
-			// fmt.Printf("%#v\n", tok)
 			break
 		}
-		// fmt.Printf("%#v\n", tok)
 	}
+	l.coalsceTokens()
+	return nil
+}
 
-	for _, t := range tokens {
-		if t.tokType != TOKEN_WHITESPACE {
-			fmt.Printf("%#v\n", t)
+// post-process the very basic per character tokens into
+// identifiers, or multiple digit numbers (not yet floats, only consecutive digits here)
+// this is a pretty crappy way of doing this
+func (l *lexer) coalsceTokens() {
+	processed := make([]token, 0, len(l.tokens)-1)
+	inProgress := l.tokens[0]
+	for _, t := range l.tokens[1 : len(l.tokens)-1] {
+		switch l.state {
+		case LEXER_NONE:
+			processed = append(processed, inProgress)
+			inProgress = t
+		case LEXER_IDENTIFIER:
+			if t.tokType == TOKEN_ALPHA || t.tokType == TOKEN_UNDERSCORE {
+				inProgress.value += t.value
+			} else {
+				// call it an identifier just in time
+				inProgress.tokType = TOKEN_IDENTIFIER
+				inProgress.name = inProgress.tokType.String()
+				// fmt.Printf("%#v\n", inProgress)
+				processed = append(processed, inProgress)
+				inProgress = t
+			}
+		case LEXER_NUMBER:
+			if t.tokType == TOKEN_DIGIT {
+				inProgress.value += t.value
+			} else {
+				inProgress.tokType = TOKEN_NUMBER
+				inProgress.name = inProgress.tokType.String()
+				// fmt.Printf("%#v\n", inProgress)
+				processed = append(processed, inProgress)
+				inProgress = t
+			}
+		}
+		switch inProgress.tokType {
+		case TOKEN_ALPHA, TOKEN_UNDERSCORE:
+			l.state = LEXER_IDENTIFIER
+		case TOKEN_DIGIT:
+			l.state = LEXER_NUMBER
+		default:
+			l.state = LEXER_NONE
 		}
 	}
+	l.tokens = processed
 }

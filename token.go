@@ -9,8 +9,10 @@ const (
 	TOKEN_UNKNOWN tokenType = iota
 	TOKEN_WHITESPACE
 	TOKEN_NEWLINE
-	TOKEN_IDENTIFIER
+	TOKEN_ALPHA
 	TOKEN_DIGIT
+	TOKEN_IDENTIFIER
+	TOKEN_NUMBER
 	// let's just go in order of whats on the keyboard?
 	TOKEN_TILDE
 	TOKEN_BACKTICK
@@ -23,15 +25,15 @@ const (
 	TOKEN_AMP
 	TOKEN_ASTERISK
 	TOKEN_OPENPAREN
-	TOKEN_CLOSEDPAREN
+	TOKEN_CLOSEPAREN
 	TOKEN_UNDERSCORE
 	TOKEN_DASH
 	TOKEN_PLUS
 	TOKEN_EQUALS
 	TOKEN_OPENCURLY
-	TOKEN_CLOSEDCURLY
+	TOKEN_CLOSECURLY
 	TOKEN_OPENBRACKET
-	TOKEN_CLOSEDBRACKET
+	TOKEN_CLOSEBRACKET
 	TOKEN_PIPE
 	TOKEN_BACKSLASH
 	TOKEN_COLON
@@ -55,7 +57,7 @@ func getTokenType(r rune) tokenType {
 			return TOKEN_WHITESPACE
 		}
 	case unicode.IsLetter(r):
-		return TOKEN_IDENTIFIER
+		return TOKEN_ALPHA
 	case unicode.IsDigit(r):
 		return TOKEN_DIGIT
 	}
@@ -84,7 +86,7 @@ func getTokenType(r rune) tokenType {
 	case '(':
 		return TOKEN_OPENPAREN
 	case ')':
-		return TOKEN_CLOSEDPAREN
+		return TOKEN_CLOSEPAREN
 	case '_':
 		return TOKEN_UNDERSCORE
 	case '-':
@@ -96,11 +98,11 @@ func getTokenType(r rune) tokenType {
 	case '{':
 		return TOKEN_OPENCURLY
 	case '}':
-		return TOKEN_CLOSEDCURLY
+		return TOKEN_CLOSECURLY
 	case '[':
 		return TOKEN_OPENBRACKET
 	case ']':
-		return TOKEN_CLOSEDBRACKET
+		return TOKEN_CLOSEBRACKET
 	case '|':
 		return TOKEN_PIPE
 	case '\\':
