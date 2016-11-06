@@ -1,26 +1,22 @@
 package main
 
-// todo(caf): need to put together a list of GML built-ins
-// and verify several details:
-//  can an identifier start with underscore?
-//  can there be multline strings?
-//
 type nodeType int
 
 const (
 	NODE_UNKNOWN nodeType = iota
+	NODE_PROGRAM
 )
 
 type astNode struct {
 	name     string
 	value    interface{}
 	thisType nodeType
-	children []*astNode
+	children []astNode
 }
 
 type parser struct {
-	l *lexer
-	a *astNode
+	// toks   []token
+	offset int
 }
 
 func (p *parser) parseAST() error {
